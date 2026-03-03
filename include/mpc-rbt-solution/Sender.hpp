@@ -17,10 +17,13 @@ public:
   : Socket::UDP(senderConfig.localPort),
     config(senderConfig),
     timer_period(config.sendingPeriodMillis)
-  {
-    UNIMPLEMENTED(__PRETTY_FUNCTION__);
-  }
+    {
+      callback = std::bind(&Node::onDataTimerTick, this);
 
+      this->create();
+      this->configure();
+      this->bind();
+    }
   void run();
 
 private:

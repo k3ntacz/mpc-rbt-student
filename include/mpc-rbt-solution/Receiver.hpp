@@ -12,7 +12,11 @@ public:
   explicit Node(const Utils::Config::Receiver & receiverConfig)
   : Socket::UDP(receiverConfig.localPort), config(receiverConfig)
   {
-    UNIMPLEMENTED(__PRETTY_FUNCTION__);
+    callback = std::bind(&Node::onDataReceived, this, std::placeholders::_1);
+  
+    this->create();
+    this->configure();
+    this->bind();
   }
 
   void run();
