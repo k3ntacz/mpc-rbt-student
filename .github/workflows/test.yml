@@ -1,0 +1,86 @@
+name: Tests
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      #TODO(matrix): this is here only because the strategy requires some matrix to be specified,
+      # decide how to actually utilize this better (have just one job and use a build/test/launch matrix instead?)
+      matrix:
+        rosdistro: [ humble ]
+
+    name: Build for ${{ matrix.rosdistro }}
+    runs-on: ubuntu-22.04
+    container: ros:humble-ros-base-jammy
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          path: ${{ github.event.repository.name }}
+      - name: Checkout simulator dependency code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          repository: Robotics-BUT/mpc-rbt-simulator
+          path: mpc_rbt_simulator
+      - name: Install required ROS 2 dependencies
+        shell: bash
+        run: |
+          sudo apt update && rosdep update
+          rosdep install --from-paths ./ --ignore-src -r -y
+      - name: Build the ROS 2 package
+        shell: bash
+        run: source /opt/ros/${{ matrix.rosdistro }}/setup.bash && colcon build
+
+  test:
+    needs: [ build ]
+    strategy:
+      fail-fast: false
+      #TODO(matrix): this is here only because the strategy requires some matrix to be specified,
+      # decide how to actually utilize this better (have just one job and use a build/test/launch matrix instead?)
+      matrix:
+        rosdistro: [ humble ]
+
+    name: Run tests for ${{ matrix.rosdistro }}
+    runs-on: ubuntu-22.04
+    container: ros:humble-ros-base-jammy
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          path: ${{ github.event.repository.name }}
+      - name: Checkout simulator dependency code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          repository: Robotics-BUT/mpc-rbt-simulator
+          path: mpc_rbt_simulator
+      - name: Install required ROS 2 dependencies
+        shell: bash
+        run: |
+          sudo apt update && rosdep update
+          rosdep install --from-paths ./ --ignore-src -r -y
+      - name: Build the ROS 2 package
+        shell: bash
+        run: source /opt/ros/${{ matrix.rosdistro }}/setup.bash && colcon build
+      - name: Run tests
+        shell: bash
+        run: source /opt/ros/${{ matrix.rosdistro }}/setup.bash && colcon test --ctest-args tests --packages-select mpc_rbt_solution
+      - name: Show test results
+        shell: bash
+        run: source /opt/ros/${{ matrix.rosdistro }}/setup.bash && colcon test-result --verbose --all

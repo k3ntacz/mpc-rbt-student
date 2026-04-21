@@ -1,0 +1,14 @@
+1. terminal
+	colcon build
+	source install/setup.bash
+	ros2 run mpc_rbt_student warehouse_manager
+
+2. terminal
+	source install/setup.bash
+	ros2 action send_goal /bexecution btcpp_ros2_interfaces/action/ExecuteTree   "{target_tree: 'WarehouseMission'}
+
+3. terminal
+	source install/setup.bash
+	ros2 run mpc_rbt_student bt_server --ros-args -p bt_xml_filename:=/home/student/ros2_ws/install/mpc_rbt_student/share/mpc_rbt_student/behavior_trees/warehouse_mission.xml
+
+/////////////
